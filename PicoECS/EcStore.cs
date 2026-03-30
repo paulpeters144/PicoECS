@@ -13,9 +13,6 @@ public sealed class EcStore
     private readonly Dictionary<Type, List<Entity>> _typeLists = [];
     private readonly Dictionary<uint, Entity> _idIndex = [];
     private readonly ReaderWriterLockSlim _lock = new();
-    
-    // Fast atomic counter for ID generation
-    private uint _nextId = 0;
 
     public int Count => getCount();
 
@@ -31,45 +28,41 @@ public sealed class EcStore
         _lock.EnterWriteLock();
         try
         {
-            // Assign ID to parent if it doesn't have one
-            if (parent.Id == 0)
-            {
-                parent.Id = generateUniqueId();
-            }
-
-            bool childrenChanged = false;
-            HashSet<uint>? currentChildren = null;
-
             if (children.Length > 0)
             {
-                currentChildren = [.. parent.ChildIds];
+                bool childrenChanged = false;
+                int originalCount = parent.ChildIds.Length;
+                List<uint>? newChildren = null;
 
                 foreach (var child in children)
                 {
                     if (child is null) continue;
 
-                    // Assign ID to child if it doesn't have one
-                    if (child.Id == 0)
-                    {
-                        child.Id = generateUniqueId();
-                    }
-
                     // Validation: Ensure child doesn't already have a different parent
                     validateChildRelationship(child, parent.Id);
 
-                    if (currentChildren.Add(child.Id))
+                    if (Array.IndexOf(parent.ChildIds, child.Id) == -1 && 
+                        (newChildren == null || !newChildren.Contains(child.Id)))
                     {
+                        newChildren ??= new List<uint>(children.Length);
+                        newChildren.Add(child.Id);
                         childrenChanged = true;
                     }
                     
                     child.ParentId = parent.Id;
                     ensureEntityIndexed(child);
                 }
-            }
 
-            if (childrenChanged && currentChildren != null)
-            {
-                parent.ChildIds = currentChildren.ToArray();
+                if (childrenChanged && newChildren != null)
+                {
+                    var combined = new uint[originalCount + newChildren.Count];
+                    if (originalCount > 0)
+                    {
+                        Array.Copy(parent.ChildIds, combined, originalCount);
+                    }
+                    newChildren.CopyTo(combined, originalCount);
+                    parent.ChildIds = combined;
+                }
             }
 
             ensureEntityIndexed(parent);
@@ -85,15 +78,6 @@ public sealed class EcStore
         if (child.ParentId != 0 && child.ParentId != newParentId)
         {
             throw new InvalidOperationException($"Child entity {child.Id} already belongs to parent {child.ParentId}.");
-        }
-
-        if (_idIndex.TryGetValue(child.Id, out var existingChild))
-        {
-            var existingParentId = existingChild.ParentId;
-            if (existingParentId != 0 && existingParentId != newParentId)
-            {
-                throw new InvalidOperationException($"Existing child entity {child.Id} already belongs to parent {existingParentId}.");
-            }
         }
     }
 
@@ -113,16 +97,6 @@ public sealed class EcStore
             }
             list.Add(entity);
         }
-    }
-
-    private uint generateUniqueId()
-    {
-        uint id;
-        do
-        {
-            id = Interlocked.Increment(ref _nextId);
-        } while (id == 0 || _idIndex.ContainsKey(id));
-        return id;
     }
 
     /// <summary>
@@ -264,7 +238,12 @@ public sealed class EcStore
         try
         {
             var toRemove = new HashSet<uint>();
-            var queue = new Queue<Entity>(entities.Where(e => e is not null));
+            var queue = new Queue<Entity>(entities.Length);
+
+            foreach (var e in entities)
+            {
+                if (e is not null) queue.Enqueue(e);
+            }
 
             while (queue.TryDequeue(out var entity))
             {
