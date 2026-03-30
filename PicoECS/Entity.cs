@@ -6,8 +6,10 @@ namespace PicoECS;
 public abstract class Entity : IEntity, IInternalEntity
 {
     public uint Id { get; private set; }
-    public uint ParentId { get; private set; }
-    public uint[] ChildIds { get; private set; } = [];
+
+    // Use private fields to store the internal state
+    private uint _parentId;
+    private uint[] _childIds = [];
 
     // Explicit implementation to keep the public API clean while allowing EcStore access
     uint IInternalEntity.Id
@@ -18,13 +20,13 @@ public abstract class Entity : IEntity, IInternalEntity
 
     uint IInternalEntity.ParentId
     {
-        get => ParentId;
-        set => ParentId = value;
+        get => _parentId;
+        set => _parentId = value;
     }
 
     uint[] IInternalEntity.ChildIds
     {
-        get => ChildIds;
-        set => ChildIds = value;
+        get => _childIds;
+        set => _childIds = value;
     }
 }

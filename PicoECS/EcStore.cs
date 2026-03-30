@@ -1,4 +1,7 @@
-using System.Security.Cryptography;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System;
 
 namespace PicoECS;
 
@@ -10,8 +13,9 @@ public sealed class EcStore
     private readonly Dictionary<Type, List<Entity>> _typeLists = [];
     private readonly Dictionary<uint, Entity> _idIndex = [];
     private readonly ReaderWriterLockSlim _lock = new();
-
-    public const uint NoneId = 0;
+    
+    // Fast atomic counter for ID generation
+    private uint _nextId = 0;
 
     public int Count => GetCount();
 
@@ -28,35 +32,49 @@ public sealed class EcStore
         try
         {
             var internalParent = (IInternalEntity)parent;
-            var currentChildren = new HashSet<uint>(internalParent.ChildIds);
-
+            
             // Assign ID to parent if it doesn't have one
-            if (internalParent.Id == NoneId)
+            if (internalParent.Id == 0)
             {
                 internalParent.Id = GenerateUniqueId();
             }
 
-            foreach (var child in children)
+            bool childrenChanged = false;
+            HashSet<uint>? currentChildren = null;
+
+            if (children.Length > 0)
             {
-                if (child is null) continue;
-                var internalChild = (IInternalEntity)child;
+                currentChildren = [.. internalParent.ChildIds];
 
-                // Assign ID to child if it doesn't have one
-                if (internalChild.Id == NoneId)
+                foreach (var child in children)
                 {
-                    internalChild.Id = GenerateUniqueId();
+                    if (child is null) continue;
+                    var internalChild = (IInternalEntity)child;
+
+                    // Assign ID to child if it doesn't have one
+                    if (internalChild.Id == 0)
+                    {
+                        internalChild.Id = GenerateUniqueId();
+                    }
+
+                    // Validation: Ensure child doesn't already have a different parent
+                    ValidateChildRelationship(internalChild, internalParent.Id);
+
+                    if (currentChildren.Add(internalChild.Id))
+                    {
+                        childrenChanged = true;
+                    }
+                    
+                    internalChild.ParentId = internalParent.Id;
+                    EnsureEntityIndexed(child);
                 }
-
-                // Validation: Ensure child doesn't already have a different parent
-                ValidateChildRelationship(internalChild, internalParent.Id);
-
-                currentChildren.Add(internalChild.Id);
-                internalChild.ParentId = internalParent.Id;
-                
-                EnsureEntityIndexed(child);
             }
 
-            internalParent.ChildIds = [.. currentChildren];
+            if (childrenChanged && currentChildren != null)
+            {
+                internalParent.ChildIds = currentChildren.ToArray();
+            }
+
             EnsureEntityIndexed(parent);
         }
         finally
@@ -67,7 +85,7 @@ public sealed class EcStore
 
     private void ValidateChildRelationship(IInternalEntity child, uint newParentId)
     {
-        if (child.ParentId != NoneId && child.ParentId != newParentId)
+        if (child.ParentId != 0 && child.ParentId != newParentId)
         {
             throw new InvalidOperationException($"Child entity {child.Id} already belongs to parent {child.ParentId}.");
         }
@@ -75,7 +93,7 @@ public sealed class EcStore
         if (_idIndex.TryGetValue(child.Id, out var existingChild))
         {
             var existingParentId = ((IInternalEntity)existingChild).ParentId;
-            if (existingParentId != NoneId && existingParentId != newParentId)
+            if (existingParentId != 0 && existingParentId != newParentId)
             {
                 throw new InvalidOperationException($"Existing child entity {child.Id} already belongs to parent {existingParentId}.");
             }
@@ -85,46 +103,28 @@ public sealed class EcStore
     private void EnsureEntityIndexed(Entity entity)
     {
         var id = entity.Id;
-        _idIndex[id] = entity;
-
-        var type = entity.GetType();
-        if (!_typeLists.TryGetValue(type, out var list))
+        // TryAdd returns true if the key was not found and was added.
+        // This avoids the O(N) list.Contains check, since an entity not in _idIndex 
+        // won't be in _typeLists either.
+        if (_idIndex.TryAdd(id, entity))
         {
-            list = [];
-            _typeLists[type] = list;
-        }
-
-        if (!list.Contains(entity))
-        {
+            var type = entity.GetType();
+            if (!_typeLists.TryGetValue(type, out var list))
+            {
+                list = [];
+                _typeLists[type] = list;
+            }
             list.Add(entity);
-        }
-    }
-
-    /// <summary>
-    /// Generates a new unique entity ID.
-    /// </summary>
-    public uint NewId()
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            return GenerateUniqueId();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
         }
     }
 
     private uint GenerateUniqueId()
     {
-        var buffer = new byte[4];
         uint id;
         do
         {
-            RandomNumberGenerator.Fill(buffer);
-            id = BitConverter.ToUInt32(buffer, 0);
-        } while (id == NoneId || _idIndex.ContainsKey(id));
+            id = Interlocked.Increment(ref _nextId);
+        } while (id == 0 || _idIndex.ContainsKey(id));
         return id;
     }
 
@@ -172,11 +172,30 @@ public sealed class EcStore
         {
             if (filterTargets.Length == 0)
             {
-                return [.. _typeLists.Values.SelectMany(l => l)];
+                var result = new List<Entity>(_idIndex.Count);
+                foreach (var list in _typeLists.Values)
+                {
+                    result.AddRange(list);
+                }
+                return result;
             }
 
-            var result = new List<Entity>();
+            var capacity = 0;
             var processedTypes = new HashSet<Type>();
+
+            // Calculate exact capacity to avoid re-allocations
+            foreach (var target in filterTargets)
+            {
+                if (target is null) continue;
+                var type = target.GetType();
+                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
+                {
+                    capacity += list.Count;
+                }
+            }
+
+            var filteredResult = new List<Entity>(capacity);
+            processedTypes.Clear();
 
             foreach (var target in filterTargets)
             {
@@ -184,10 +203,10 @@ public sealed class EcStore
                 var type = target.GetType();
                 if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
                 {
-                    result.AddRange(list);
+                    filteredResult.AddRange(list);
                 }
             }
-            return result;
+            return filteredResult;
         }
         finally
         {
@@ -220,9 +239,16 @@ public sealed class EcStore
         _lock.EnterReadLock();
         try
         {
-            return _typeLists.TryGetValue(typeof(T), out var list) 
-                ? [.. list.Cast<T>()] 
-                : [];
+            if (_typeLists.TryGetValue(typeof(T), out var list))
+            {
+                var result = new T[list.Count];
+                for (int i = 0; i < list.Count; i++)
+                {
+                    result[i] = (T)list[i];
+                }
+                return result;
+            }
+            return [];
         }
         finally
         {
@@ -245,7 +271,7 @@ public sealed class EcStore
 
             while (queue.TryDequeue(out var entity))
             {
-                if (entity.Id == NoneId || !toRemove.Add(entity.Id)) continue;
+                if (entity.Id == 0 || !toRemove.Add(entity.Id)) continue;
 
                 foreach (var childId in ((IInternalEntity)entity).ChildIds)
                 {
@@ -316,7 +342,7 @@ public sealed class EcStore
         try
         {
             var parentId = ((IInternalEntity)entity).ParentId;
-            return parentId != NoneId && _idIndex.TryGetValue(parentId, out var parent) 
+            return parentId != 0 && _idIndex.TryGetValue(parentId, out var parent) 
                 ? parent as T 
                 : null;
         }
@@ -336,8 +362,9 @@ public sealed class EcStore
         _lock.EnterReadLock();
         try
         {
-            var result = new List<T>();
-            foreach (var childId in ((IInternalEntity)parent).ChildIds)
+            var childIds = ((IInternalEntity)parent).ChildIds;
+            var result = new List<T>(childIds.Length);
+            foreach (var childId in childIds)
             {
                 if (_idIndex.TryGetValue(childId, out var child) && child is T typedChild)
                 {
@@ -363,16 +390,26 @@ public sealed class EcStore
         try
         {
             var result = new List<Entity>();
-            var stack = new Stack<uint>(((IInternalEntity)parent).ChildIds.Reverse());
+            var childIds = ((IInternalEntity)parent).ChildIds;
+            
+            // Pre-allocate stack to avoid resizing
+            var stack = new Stack<uint>(childIds.Length > 0 ? childIds.Length : 4);
+            
+            // Push in reverse order to maintain expected traversal order
+            for (int i = childIds.Length - 1; i >= 0; i--)
+            {
+                stack.Push(childIds[i]);
+            }
 
             while (stack.TryPop(out var id))
             {
                 if (_idIndex.TryGetValue(id, out var current))
                 {
                     result.Add(current);
-                    foreach (var childId in ((IInternalEntity)current).ChildIds.Reverse())
+                    var currentChildIds = ((IInternalEntity)current).ChildIds;
+                    for (int i = currentChildIds.Length - 1; i >= 0; i--)
                     {
-                        stack.Push(childId);
+                        stack.Push(currentChildIds[i]);
                     }
                 }
             }

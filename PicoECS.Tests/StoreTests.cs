@@ -20,10 +20,13 @@ public class StoreTests
         Assert.NotEqual(0u, parent.Id);
         Assert.NotEqual(0u, child1.Id);
         Assert.NotEqual(0u, child2.Id);
-        Assert.Equal(parent.Id, child1.ParentId);
-        Assert.Equal(parent.Id, child2.ParentId);
-        Assert.Contains(child1.Id, parent.ChildIds);
-        Assert.Contains(child2.Id, parent.ChildIds);
+        
+        Assert.Same(parent, store.GetParent<TestEntity>(child1));
+        Assert.Same(parent, store.GetParent<TestEntity>(child2));
+        
+        var children = store.GetChildren<Entity>(parent);
+        Assert.Contains(child1, children);
+        Assert.Contains(child2, children);
     }
 
     [Fact]
