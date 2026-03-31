@@ -298,4 +298,50 @@ public class StoreApiTests
         Assert.Equal(1, store.Count);
         Assert.NotNull(store.Get<Player>(player3.Id));
     }
+
+    [Fact]
+    public void Store_Example_Query_Children_And_Identify_Types()
+    {
+        var store = new EcStore();
+        
+        // 1. Setup: Create a player and give them a Transform and a Weapon as children
+        var player = new Player { Name = "Hero" };
+        var position = new Transform { X = 100, Y = 200 };
+        var sword = new Weapon { ItemId = "excalibur", Damage = 99 };
+        
+        store.Add(player);
+        store.Add(player, position); // Position is a child of Player
+        store.Add(player, sword);    // Sword is a child of Player
+
+        // 2. Query: Get the player back from the store (simulating a search)
+        var hero = store.GetFirst<Player>();
+        Assert.NotNull(hero);
+
+        // 3. Query Children: Get all direct children as the base 'Entity' type
+        var children = store.GetChildren<Entity>(hero);
+        Assert.Equal(2, children.Count);
+
+        // 4. Identify Types: Use C# pattern matching (is/as) to figure out what each child is
+        int weaponCount = 0;
+        int transformCount = 0;
+
+        foreach (var child in children)
+        {
+            if (child is Weapon weapon)
+            {
+                // We found a weapon! We can now access Weapon-specific properties.
+                Assert.Equal("excalibur", weapon.ItemId);
+                weaponCount++;
+            }
+            else if (child is Transform transform)
+            {
+                // We found the position! We can now access Transform-specific properties.
+                Assert.Equal(100, transform.X);
+                transformCount++;
+            }
+        }
+
+        Assert.Equal(1, weaponCount);
+        Assert.Equal(1, transformCount);
+    }
 }

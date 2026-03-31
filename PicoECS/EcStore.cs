@@ -17,6 +17,7 @@ public sealed class EcStore
     private readonly Dictionary<Type, List<Entity>> _typeLists = [];
     private readonly Dictionary<uint, Entity> _idIndex = [];
     private readonly ReaderWriterLockSlim _lock = new();
+    private uint _nextId = 0;
 
     public int Count => getCount();
 
@@ -25,15 +26,37 @@ public sealed class EcStore
     /// </summary>
     public List<Entity> GetAll()
     {
+        var result = new List<Entity>(Count);
+        GetAll(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Fills the provided collection with all entities in the store.
+    /// </summary>
+    public void GetAll(ICollection<Entity> result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
         _lock.EnterReadLock();
         try
         {
-            var result = new List<Entity>(_idIndex.Count);
-            foreach (var list in _typeLists.Values)
+            if (result is List<Entity> listResult)
             {
-                result.AddRange(list);
+                foreach (var list in _typeLists.Values)
+                {
+                    listResult.AddRange(list);
+                }
             }
-            return result;
+            else
+            {
+                foreach (var list in _typeLists.Values)
+                {
+                    foreach (var entity in list)
+                    {
+                        result.Add(entity);
+                    }
+                }
+            }
         }
         finally
         {
@@ -46,35 +69,62 @@ public sealed class EcStore
     /// </summary>
     public List<Entity> GetAll(params Type[] types)
     {
-        if (types == null || types.Length == 0) return GetAll();
+        var result = new List<Entity>();
+        GetAll(result, types);
+        return result;
+    }
+
+    /// <summary>
+    /// Fills the provided collection with entities filtered by type.
+    /// </summary>
+    public void GetAll(ICollection<Entity> result, params Type[] types)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        if (types == null || types.Length == 0)
+        {
+            GetAll(result);
+            return;
+        }
 
         _lock.EnterReadLock();
         try
         {
-            var capacity = 0;
-            var processedTypes = new HashSet<Type>();
-
-            foreach (var type in types)
+            // For small number of types, avoid HashSet allocation
+            if (types.Length <= 4)
             {
-                if (type is null) continue;
-                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
+                for (int i = 0; i < types.Length; i++)
                 {
-                    capacity += list.Count;
+                    var type = types[i];
+                    if (type is null) continue;
+                    
+                    // Simple duplicate check for small arrays
+                    bool duplicate = false;
+                    for (int j = 0; j < i; j++)
+                    {
+                        if (types[j] == type)
+                        {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!duplicate && _typeLists.TryGetValue(type, out var list))
+                    {
+                        foreach (var entity in list) result.Add(entity);
+                    }
                 }
             }
-
-            var filteredResult = new List<Entity>(capacity);
-            processedTypes.Clear();
-
-            foreach (var type in types)
+            else
             {
-                if (type is null) continue;
-                if (processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
+                var processedTypes = new HashSet<Type>(types.Length);
+                foreach (var type in types)
                 {
-                    filteredResult.AddRange(list);
+                    if (type is not null && processedTypes.Add(type) && _typeLists.TryGetValue(type, out var list))
+                    {
+                        foreach (var entity in list) result.Add(entity);
+                    }
                 }
             }
-            return filteredResult;
         }
         finally
         {
@@ -143,39 +193,59 @@ public sealed class EcStore
 
             if (children != null && children.Length > 0)
             {
-                bool childrenChanged = false;
-                int originalCount = parent.ChildIds.Length;
-                List<uint>? newChildren = null;
+                uint[]? newChildIds = null;
+                int addedCount = 0;
 
-                foreach (var child in children)
+                for (int i = 0; i < children.Length; i++)
                 {
+                    var child = children[i];
                     if (child is null) continue;
 
                     if (child.Id == 0) child.Id = generateUniqueId();
-
-                    // Validation: Ensure child doesn't already have a different parent
                     validateChildRelationship(child, parent.Id);
 
-                    if (Array.IndexOf(parent.ChildIds, child.Id) == -1 && 
-                        (newChildren == null || !newChildren.Contains(child.Id)))
+                    bool alreadyChild = false;
+                    var existingChildIds = parent.ChildIds;
+                    for (int j = 0; j < existingChildIds.Length; j++)
                     {
-                        newChildren ??= new List<uint>(children.Length);
-                        newChildren.Add(child.Id);
-                        childrenChanged = true;
+                        if (existingChildIds[j] == child.Id)
+                        {
+                            alreadyChild = true;
+                            break;
+                        }
                     }
-                    
+
+                    if (!alreadyChild && newChildIds != null)
+                    {
+                        for (int j = 0; j < addedCount; j++)
+                        {
+                            if (newChildIds[j] == child.Id)
+                            {
+                                alreadyChild = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!alreadyChild)
+                    {
+                        newChildIds ??= new uint[children.Length];
+                        newChildIds[addedCount++] = child.Id;
+                    }
+
                     child.ParentId = parent.Id;
                     ensureEntityIndexed(child);
                 }
 
-                if (childrenChanged && newChildren != null)
+                if (addedCount > 0)
                 {
-                    var combined = new uint[originalCount + newChildren.Count];
+                    int originalCount = parent.ChildIds.Length;
+                    var combined = new uint[originalCount + addedCount];
                     if (originalCount > 0)
                     {
                         Array.Copy(parent.ChildIds, combined, originalCount);
                     }
-                    newChildren.CopyTo(combined, originalCount);
+                    Array.Copy(newChildIds!, 0, combined, originalCount, addedCount);
                     parent.ChildIds = combined;
                 }
             }
@@ -194,16 +264,13 @@ public sealed class EcStore
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private uint generateUniqueId()
     {
-        uint id;
-        do
-        {
-            id = (uint)Random.Shared.Next(1, int.MaxValue);
-        } while (_idIndex.ContainsKey(id));
-        return id;
+        return Interlocked.Increment(ref _nextId);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ensureEntityIndexed(Entity entity)
     {
         if (entity.Id == 0)
@@ -223,6 +290,7 @@ public sealed class EcStore
                 list = [];
                 _typeLists[type] = list;
             }
+            entity.TypeListIndex = list.Count;
             list.Add(entity);
         }
     }
@@ -304,6 +372,29 @@ public sealed class EcStore
     }
 
     /// <summary>
+    /// Fills the provided collection with all entities of a specific type.
+    /// </summary>
+    public void GetByType<T>(ICollection<T> result) where T : Entity
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _lock.EnterReadLock();
+        try
+        {
+            if (_typeLists.TryGetValue(typeof(T), out var list))
+            {
+                foreach (var entity in list)
+                {
+                    result.Add((T)entity);
+                }
+            }
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
     /// Removes entities and all their descendants from the store.
     /// </summary>
     public void Remove(params Entity[] entities)
@@ -341,7 +432,17 @@ public sealed class EcStore
                     var type = entity.GetType();
                     if (_typeLists.TryGetValue(type, out var list))
                     {
-                        list.Remove(entity);
+                        int index = entity.TypeListIndex;
+                        int lastIndex = list.Count - 1;
+                        if (index < lastIndex)
+                        {
+                            var lastEntity = list[lastIndex];
+                            list[index] = lastEntity;
+                            lastEntity.TypeListIndex = index;
+                        }
+                        list.RemoveAt(lastIndex);
+                        entity.TypeListIndex = -1;
+
                         if (list.Count == 0) _typeLists.Remove(type);
                     }
                 }

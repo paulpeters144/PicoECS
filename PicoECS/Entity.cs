@@ -12,4 +12,5 @@ public abstract class Entity
 
     internal uint ParentId { get; set; }
     internal uint[] ChildIds { get; set; } = [];
+    internal int TypeListIndex { get; set; } = -1;
 }
