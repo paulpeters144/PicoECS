@@ -32,6 +32,123 @@ public sealed class EcStore
     }
 
     /// <summary>
+    /// Retrieves all entities of the specified type.
+    /// </summary>
+    public List<T> GetAll<T>() where T : Entity
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            if (_typeLists.TryGetValue(typeof(T), out var list))
+            {
+                return list.Cast<T>().ToList();
+            }
+            return [];
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Retrieves all entities matching one or more of the specified types.
+    /// </summary>
+    public List<Entity> GetAll(params Type[] types)
+    {
+        var result = new List<Entity>();
+        if (types == null || types.Length == 0) return result;
+        
+        var uniqueTypes = types.Where(t => t != null).Distinct().ToHashSet();
+        
+        _lock.EnterReadLock();
+        try
+        {
+            foreach (var type in uniqueTypes)
+            {
+                if (_typeLists.TryGetValue(type, out var list))
+                {
+                    result.AddRange(list);
+                }
+            }
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a deferred query for the specified types.
+    /// </summary>
+    public EntityQuery Query(params Type[] types) => new(this, types);
+
+    /// <summary>
+    /// Creates a deferred query for the specified type.
+    /// </summary>
+    public EntityQuery Query<T1>() where T1 : Entity 
+        => Query(typeof(T1));
+
+    /// <summary>
+    /// Creates a deferred query for the specified types.
+    /// </summary>
+    public EntityQuery Query<T1, T2>() where T1 : Entity where T2 : Entity 
+        => Query(typeof(T1), typeof(T2));
+
+    /// <summary>
+    /// Creates a deferred query for the specified types.
+    /// </summary>
+    public EntityQuery Query<T1, T2, T3>() where T1 : Entity where T2 : Entity where T3 : Entity 
+        => Query(typeof(T1), typeof(T2), typeof(T3));
+
+    /// <summary>
+    /// Creates a deferred query for the specified types.
+    /// </summary>
+    public EntityQuery Query<T1, T2, T3, T4>() where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity 
+        => Query(typeof(T1), typeof(T2), typeof(T3), typeof(T4));
+
+    /// <summary>
+    /// Creates a deferred query for the specified types.
+    /// </summary>
+    public EntityQuery Query<T1, T2, T3, T4, T5>() where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity where T5 : Entity 
+        => Query(typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
+
+    internal void ForEachInternal(Type[] types, Action<Entity> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        if (types == null || types.Length == 0) return;
+
+        _lock.EnterReadLock();
+        try
+        {
+            // Use HashSet for distinct types if multiple provided, otherwise direct lookup
+            if (types.Length == 1)
+            {
+                if (types[0] != null && _typeLists.TryGetValue(types[0], out var list))
+                {
+                    foreach (var entity in list) action(entity);
+                }
+            }
+            else
+            {
+                var processed = new HashSet<Type>();
+                foreach (var type in types)
+                {
+                    if (type != null && processed.Add(type) && _typeLists.TryGetValue(type, out var list))
+                    {
+                        foreach (var entity in list) action(entity);
+                    }
+                }
+            }
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
     /// Fills the provided collection with all entities in the store.
     /// </summary>
     public void GetAll(ICollection<Entity> result)

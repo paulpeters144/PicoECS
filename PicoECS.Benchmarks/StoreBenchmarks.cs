@@ -25,7 +25,7 @@ public class StoreBenchmarks
         
         for (int i = 0; i < EntityCount; i++)
         {
-            var ent = new BenchmarkEntity();
+            Entity ent = (i % 2 == 0) ? new BenchmarkEntity() : new OtherBenchmarkEntity();
             _store.Add(ent);
             _ids[i] = ent.Id;
         }
@@ -100,6 +100,12 @@ public class StoreBenchmarks
     public void ForEachGeneric()
     {
         _store.ForEach<BenchmarkEntity>(e => { });
+    }
+
+    [Benchmark]
+    public void QueryForEach()
+    {
+        _store.Query<BenchmarkEntity, OtherBenchmarkEntity, Entity>().ForEach(e => { });
     }
 
     [Benchmark]

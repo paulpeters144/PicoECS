@@ -141,6 +141,19 @@ public class StoreApiTests
     }
 
     [Fact]
+    public void Store_Can_Retrieve_Entities_By_Type_Runtime()
+    {
+        var store = new EcStore();
+        store.Add(new Player { Name = "Hero" });
+        store.Add(new Transform { X = 10 });
+
+        // Example of using GetAll with typeof(Class) for runtime type queries
+        var players = store.GetAll(typeof(Player));
+        Assert.Single(players);
+        Assert.IsType<Player>(players[0]);
+    }
+
+    [Fact]
     public void Store_Is_ThreadSafe_During_Concurrent_Adds_And_Queries()
     {
         var store = new EcStore();

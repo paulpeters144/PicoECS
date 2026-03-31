@@ -194,6 +194,41 @@ public class EcStoreTests
         Assert.Equal(2, count);
     }
 
+    [Fact]
+    public void Query_ForEach_ExecutesOnMultipleTypes()
+    {
+        var store = new EcStore();
+        store.Add(new TestEntity());
+        store.Add(new OtherEntity());
+        store.Add(new DerivedTestEntity());
+        
+        int count = 0;
+        store.Query(typeof(TestEntity), typeof(OtherEntity)).ForEach(e => count++);
+        
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public void Query_Generic_ExecutesOnCorrectTypes()
+    {
+        var store = new EcStore();
+        store.Add(new TestEntity());
+        store.Add(new OtherEntity());
+        store.Add(new DerivedTestEntity());
+        
+        int count1 = 0;
+        store.Query<TestEntity>().ForEach(e => count1++);
+        Assert.Equal(1, count1);
+
+        int count2 = 0;
+        store.Query<TestEntity, OtherEntity>().ForEach(e => count2++);
+        Assert.Equal(2, count2);
+
+        int count3 = 0;
+        store.Query<TestEntity, OtherEntity, DerivedTestEntity>().ForEach(e => count3++);
+        Assert.Equal(3, count3);
+    }
+
     #endregion
 
     #region Hierarchy Navigation Tests
