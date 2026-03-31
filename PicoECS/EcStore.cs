@@ -347,54 +347,6 @@ public sealed class EcStore
     }
 
     /// <summary>
-    /// Retrieves all entities of a specific type.
-    /// </summary>
-    public IEnumerable<T> GetByType<T>() where T : Entity
-    {
-        _lock.EnterReadLock();
-        try
-        {
-            if (_typeLists.TryGetValue(typeof(T), out var list))
-            {
-                var result = new T[list.Count];
-                for (int i = 0; i < list.Count; i++)
-                {
-                    result[i] = (T)list[i];
-                }
-                return result;
-            }
-            return [];
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
-    /// <summary>
-    /// Fills the provided collection with all entities of a specific type.
-    /// </summary>
-    public void GetByType<T>(ICollection<T> result) where T : Entity
-    {
-        ArgumentNullException.ThrowIfNull(result);
-        _lock.EnterReadLock();
-        try
-        {
-            if (_typeLists.TryGetValue(typeof(T), out var list))
-            {
-                foreach (var entity in list)
-                {
-                    result.Add((T)entity);
-                }
-            }
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
-    /// <summary>
     /// Removes entities and all their descendants from the store.
     /// </summary>
     public void Remove(params Entity[] entities)

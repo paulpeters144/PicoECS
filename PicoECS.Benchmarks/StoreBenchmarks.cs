@@ -73,11 +73,10 @@ public class StoreBenchmarks
     }
 
     [Benchmark]
-    public void GetEntitiesByType()
+    public void GetEntitiesByGenericType()
     {
-        var result = _store.GetByType<BenchmarkEntity>();
-        int count = 0;
-        foreach (var _ in result) count++;
+        var result = _store.GetAll<BenchmarkEntity>();
+        int count = result.Count;
     }
 
     [Benchmark]

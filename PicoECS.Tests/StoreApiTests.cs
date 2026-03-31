@@ -69,8 +69,8 @@ public class StoreApiTests
         var transform = new Transform { X = 5, Y = 5 };
         store.Add(player1, transform);
 
-        var allPlayers = store.GetByType<Player>();
-        Assert.Equal(2, allPlayers.Count());
+        var allPlayers = store.GetAll<Player>();
+        Assert.Equal(2, allPlayers.Count);
 
         var firstTransform = store.GetFirst<Transform>();
         Assert.NotNull(firstTransform);
@@ -146,7 +146,7 @@ public class StoreApiTests
             var player = new Player { Name = $"Player {i}" };
             store.Add(player);
             
-            var players = store.GetByType<Player>();
+            var players = store.GetAll<Player>();
             Assert.NotEmpty(players);
         });
 
@@ -219,12 +219,12 @@ public class StoreApiTests
         store.Add(weapon);
         store.Add(basicItem);
 
-        // 1. GetByType uses EXACT type matching for maximum performance (O(1) dictionary lookup).
+        // 1. GetAll<T> uses EXACT type matching for maximum performance (O(1) dictionary lookup).
         // It will NOT return derived types.
-        var exactItems = store.GetByType<InventoryItem>();
+        var exactItems = store.GetAll<InventoryItem>();
         Assert.Single(exactItems); // Only the "Apple", not the Weapon
         
-        var weapons = store.GetByType<Weapon>();
+        var weapons = store.GetAll<Weapon>();
         Assert.Single(weapons);
 
         // 2. In contrast, relationship queries like GetChildren are polymorphic.

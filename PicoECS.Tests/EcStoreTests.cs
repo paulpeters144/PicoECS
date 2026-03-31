@@ -163,23 +163,23 @@ public class EcStoreTests
     }
 
     [Fact]
-    public void GetByType_ReturnsAllMatchingExactType()
+    public void GetAll_Generic_ReturnsAllMatchingExactType()
     {
         var store = new EcStore();
         store.Add(new TestEntity());
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
-        Assert.Equal(2, store.GetByType<TestEntity>().Count());
-        Assert.Single(store.GetByType<OtherEntity>());
+        Assert.Equal(2, store.GetAll<TestEntity>().Count);
+        Assert.Single(store.GetAll<OtherEntity>());
     }
 
     [Fact]
-    public void GetByType_DoesNotReturnDerivedTypes()
+    public void GetAll_Generic_DoesNotReturnDerivedTypes()
     {
         var store = new EcStore();
         store.Add(new DerivedTestEntity());
-        Assert.Empty(store.GetByType<TestEntity>());
-        Assert.Single(store.GetByType<DerivedTestEntity>());
+        Assert.Empty(store.GetAll<TestEntity>());
+        Assert.Single(store.GetAll<DerivedTestEntity>());
     }
 
     [Fact]
@@ -525,11 +525,11 @@ public class EcStoreTests
     }
 
     [Fact]
-    public void GetByType_ReturnsEmptyWhenNoneMatch()
+    public void GetAll_Generic_ReturnsEmptyWhenNoneMatch()
     {
         var store = new EcStore();
         store.Add(new OtherEntity());
-        Assert.Empty(store.GetByType<TestEntity>());
+        Assert.Empty(store.GetAll<TestEntity>());
     }
 
     [Fact]
