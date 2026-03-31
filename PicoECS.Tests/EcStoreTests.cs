@@ -123,7 +123,7 @@ public class EcStoreTests
         var store = new EcStore();
         var ent = new TestEntity();
         store.Add(ent);
-        var fetched = store.Get<TestEntity>(ent.Id);
+        var fetched = store.GetById<TestEntity>(ent.Id);
         Assert.Same(ent, fetched);
     }
 
@@ -131,7 +131,7 @@ public class EcStoreTests
     public void Get_NonExistentId_ReturnsNull()
     {
         var store = new EcStore();
-        Assert.Null(store.Get<TestEntity>(999));
+        Assert.Null(store.GetById<TestEntity>(999));
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class EcStoreTests
         var store = new EcStore();
         var ent = new TestEntity();
         store.Add(ent);
-        Assert.Null(store.Get<OtherEntity>(ent.Id));
+        Assert.Null(store.GetById<OtherEntity>(ent.Id));
     }
 
     [Fact]
@@ -192,41 +192,6 @@ public class EcStoreTests
         int count = 0;
         store.ForEach<TestEntity>(e => count++);
         Assert.Equal(2, count);
-    }
-
-    [Fact]
-    public void Query_ForEach_ExecutesOnMultipleTypes()
-    {
-        var store = new EcStore();
-        store.Add(new TestEntity());
-        store.Add(new OtherEntity());
-        store.Add(new DerivedTestEntity());
-        
-        int count = 0;
-        store.Query(typeof(TestEntity), typeof(OtherEntity)).ForEach(e => count++);
-        
-        Assert.Equal(2, count);
-    }
-
-    [Fact]
-    public void Query_Generic_ExecutesOnCorrectTypes()
-    {
-        var store = new EcStore();
-        store.Add(new TestEntity());
-        store.Add(new OtherEntity());
-        store.Add(new DerivedTestEntity());
-        
-        int count1 = 0;
-        store.Query<TestEntity>().ForEach(e => count1++);
-        Assert.Equal(1, count1);
-
-        int count2 = 0;
-        store.Query<TestEntity, OtherEntity>().ForEach(e => count2++);
-        Assert.Equal(2, count2);
-
-        int count3 = 0;
-        store.Query<TestEntity, OtherEntity, DerivedTestEntity>().ForEach(e => count3++);
-        Assert.Equal(3, count3);
     }
 
     #endregion
@@ -350,7 +315,7 @@ public class EcStoreTests
         store.Add(ent);
         store.Remove(ent);
         Assert.Equal(0, store.Count);
-        Assert.Null(store.Get<TestEntity>(ent.Id));
+        Assert.Null(store.GetById<TestEntity>(ent.Id));
     }
 
     [Fact]
@@ -362,7 +327,7 @@ public class EcStoreTests
         store.Add(parent, child);
         store.Remove(parent);
         Assert.Equal(0, store.Count);
-        Assert.Null(store.Get<TestEntity>(child.Id));
+        Assert.Null(store.GetById<TestEntity>(child.Id));
     }
 
     [Fact]
@@ -488,9 +453,9 @@ public class EcStoreTests
         store.Remove(middle);
 
         Assert.Equal(1, store.Count);
-        Assert.Same(root, store.Get<TestEntity>(root.Id));
-        Assert.Null(store.Get<TestEntity>(middle.Id));
-        Assert.Null(store.Get<TestEntity>(leaf.Id));
+        Assert.Same(root, store.GetById<TestEntity>(root.Id));
+        Assert.Null(store.GetById<TestEntity>(middle.Id));
+        Assert.Null(store.GetById<TestEntity>(leaf.Id));
     }
 
     [Fact]
@@ -546,7 +511,7 @@ public class EcStoreTests
     public void Get_NullId_ReturnsNull()
     {
         var store = new EcStore();
-        Assert.Null(store.Get<Entity>(0));
+        Assert.Null(store.GetById<Entity>(0));
     }
 
     #endregion

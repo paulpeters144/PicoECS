@@ -68,7 +68,7 @@ public class StoreBenchmarks
     {
         for (int i = 0; i < EntityCount; i++)
         {
-            _store.Get<BenchmarkEntity>(_ids[i]);
+            _store.GetById<BenchmarkEntity>(_ids[i]);
         }
     }
 
@@ -82,6 +82,12 @@ public class StoreBenchmarks
     public void GetAll()
     {
         var all = _store.GetAll();
+    }
+
+    [Benchmark]
+    public void GetAllGeneric()
+    {
+        var all = _store.GetAll<BenchmarkEntity>();
     }
 
     [Benchmark]
@@ -100,12 +106,6 @@ public class StoreBenchmarks
     public void ForEachGeneric()
     {
         _store.ForEach<BenchmarkEntity>(e => { });
-    }
-
-    [Benchmark]
-    public void QueryForEach()
-    {
-        _store.Query<BenchmarkEntity, OtherBenchmarkEntity, Entity>().ForEach(e => { });
     }
 
     [Benchmark]

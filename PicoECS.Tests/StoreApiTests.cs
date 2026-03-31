@@ -79,7 +79,7 @@ public class StoreApiTests
         var firstTransform = store.GetFirst<Transform>();
         Assert.NotNull(firstTransform);
 
-        var specificPlayer = store.Get<Player>(player2.Id);
+        var specificPlayer = store.GetById<Player>(player2.Id);
         Assert.Same(player2, specificPlayer);
 
         var descendants = store.GetDescendants(player1);
@@ -102,9 +102,9 @@ public class StoreApiTests
         store.Remove(player);
 
         Assert.Equal(0, store.Count);
-        Assert.Null(store.Get<Player>(player.Id));
-        Assert.Null(store.Get<Transform>(transform.Id));
-        Assert.Null(store.Get<InventoryItem>(item.Id));
+        Assert.Null(store.GetById<Player>(player.Id));
+        Assert.Null(store.GetById<Transform>(transform.Id));
+        Assert.Null(store.GetById<InventoryItem>(item.Id));
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class StoreApiTests
         store.Add(grandparent, parent);
         store.Add(parent, child);
 
-        var directChildren = store.GetChildren<Entity>(grandparent);
+        var directChildren = store.GetChildren(grandparent);
         Assert.Single(directChildren);
         Assert.Contains(parent, directChildren);
 
@@ -271,7 +271,7 @@ public class StoreApiTests
 
         // Only player3 remains
         Assert.Equal(1, store.Count);
-        Assert.NotNull(store.Get<Player>(player3.Id));
+        Assert.NotNull(store.GetById<Player>(player3.Id));
     }
 
     [Fact]

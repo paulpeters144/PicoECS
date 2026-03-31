@@ -41,7 +41,12 @@ public sealed class EcStore
         {
             if (_typeLists.TryGetValue(typeof(T), out var list))
             {
-                return list.Cast<T>().ToList();
+                var result = new List<T>(list.Count);
+                foreach (var entity in list)
+                {
+                    result.Add((T)entity);
+                }
+                return result;
             }
             return [];
         }
@@ -78,41 +83,6 @@ public sealed class EcStore
         }
         return result;
     }
-
-    /// <summary>
-    /// Creates a deferred query for the specified types.
-    /// </summary>
-    public EntityQuery Query(params Type[] types) => new(this, types);
-
-    /// <summary>
-    /// Creates a deferred query for the specified type.
-    /// </summary>
-    public EntityQuery Query<T1>() where T1 : Entity 
-        => Query(typeof(T1));
-
-    /// <summary>
-    /// Creates a deferred query for the specified types.
-    /// </summary>
-    public EntityQuery Query<T1, T2>() where T1 : Entity where T2 : Entity 
-        => Query(typeof(T1), typeof(T2));
-
-    /// <summary>
-    /// Creates a deferred query for the specified types.
-    /// </summary>
-    public EntityQuery Query<T1, T2, T3>() where T1 : Entity where T2 : Entity where T3 : Entity 
-        => Query(typeof(T1), typeof(T2), typeof(T3));
-
-    /// <summary>
-    /// Creates a deferred query for the specified types.
-    /// </summary>
-    public EntityQuery Query<T1, T2, T3, T4>() where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity 
-        => Query(typeof(T1), typeof(T2), typeof(T3), typeof(T4));
-
-    /// <summary>
-    /// Creates a deferred query for the specified types.
-    /// </summary>
-    public EntityQuery Query<T1, T2, T3, T4, T5>() where T1 : Entity where T2 : Entity where T3 : Entity where T4 : Entity where T5 : Entity 
-        => Query(typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5));
 
     internal void ForEachInternal(Type[] types, Action<Entity> action)
     {
@@ -348,7 +318,7 @@ public sealed class EcStore
     /// <summary>
     /// Retrieves an entity by its unique ID.
     /// </summary>
-    public T? Get<T>(uint id) where T : Entity
+    public T? GetById<T>(uint id) where T : Entity
     {
         _lock.EnterReadLock();
         try
@@ -500,6 +470,33 @@ public sealed class EcStore
             return parentId != 0 && _idIndex.TryGetValue(parentId, out var parent) 
                 ? parent as T 
                 : null;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Gets direct children of an entity.
+    /// </summary>
+    public List<Entity> GetChildren(Entity parent)
+    {
+        ArgumentNullException.ThrowIfNull(parent);
+
+        _lock.EnterReadLock();
+        try
+        {
+            var childIds = parent.ChildIds;
+            var result = new List<Entity>(childIds.Length);
+            foreach (var childId in childIds)
+            {
+                if (_idIndex.TryGetValue(childId, out var child) && child is Entity typedChild)
+                {
+                    result.Add(typedChild);
+                }
+            }
+            return result;
         }
         finally
         {
