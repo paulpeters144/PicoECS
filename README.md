@@ -138,5 +138,30 @@ store.ForEach<Position>(p => {
 For more examples, explore the test suite:
 👉 **[PicoEntityStore.Tests/StoreApiTests.cs](./PicoEntityStore.Tests/StoreApiTests.cs)**
 
+## 📊 Performance Benchmarks (120 FPS Target)
+
+The following benchmarks demonstrate the performance of `PicoEntityStore` methods within the context of a high-performance game running at **120 FPS** (8.33ms / 8,333,333 ns frame budget).
+
+**Hardware & Environment:**
+* **Date:** March 31, 2026
+* **OS:** Windows 11
+* **CPU:** 13th Gen Intel Core i9-13980HX (32 logical cores)
+* **Runtime:** .NET 10.0
+
+| Operation | Scale / Setup | Mean Execution Time | Ops per Frame (120 FPS) |
+| :--- | :--- | :--- | :--- |
+| **Add** | Bulk add 10,000 entities | ~498.81 µs | **16** |
+| **Get\<T\>** | Retrieve single entity | ~10.32 ns | **807,493** |
+| **Descendants**| Traverse 100 deep hierarchy| ~1.03 µs | **8,092** |
+| **All** | Retrieve 10,000 entities | ~3.17 µs | **2,628** |
+| **All\<T\>** | Filter 10,000 entities | ~9.14 µs | **911** |
+| **First\<T\>** | Retrieve first entity | ~11.28 ns | **738,770** |
+| **ForEach** | Iterate 10,000 entities | ~3.88 µs | **2,145** |
+| **ForEach\<T\>** | Iterate 10,000 entities by type| ~3.07 µs | **2,716** |
+| **Remove** | Remove 100 entities | ~23.64 µs | **352** |
+
+*Note: "Ops per Frame" indicates how many times the exact operation (including its internal loops over the specified scale) can be executed within a single 8.33ms frame.*
+
 ## ⚖️ License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+

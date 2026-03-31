@@ -41,7 +41,7 @@ public class StoreBenchmarks
         }
     }
 
-    [IterationSetup(Target = nameof(RemoveEntities))]
+    [IterationSetup(Target = nameof(Remove))]
     public void IterationSetup()
     {
         _toRemove = [];
@@ -54,7 +54,7 @@ public class StoreBenchmarks
     }
 
     [Benchmark]
-    public void AddEntities()
+    public void Add()
     {
         var store = new PicoEntityStore();
         for (int i = 0; i < PicoEntityCount; i++)
@@ -64,16 +64,13 @@ public class StoreBenchmarks
     }
 
     [Benchmark]
-    public void GetPicoEntityById()
+    public void Get()
     {
-        for (int i = 0; i < PicoEntityCount; i++)
-        {
-            _store.Get<BenchmarkPicoEntity>(_ids[i]);
-        }
+        var entity = _store.Get<BenchmarkPicoEntity>(_ids[0]);
     }
 
     [Benchmark]
-    public void TraverseDescendants()
+    public void Descendants()
     {
         var descendants = _store.Descendants(_root);
     }
@@ -109,7 +106,7 @@ public class StoreBenchmarks
     }
 
     [Benchmark]
-    public void RemoveEntities()
+    public void Remove()
     {
         _store.Remove([.. _toRemove]);
     }
