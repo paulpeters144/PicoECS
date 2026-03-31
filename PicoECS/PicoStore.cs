@@ -17,7 +17,6 @@ public sealed class PicoStore
     private readonly Dictionary<Type, List<Entity>> _typeLists = [];
     private readonly Dictionary<uint, Entity> _idIndex = [];
     private readonly ReaderWriterLockSlim _lock = new();
-    private uint _nextId = 0;
 
     public int Count => getCount();
 
@@ -221,7 +220,6 @@ public sealed class PicoStore
                     var child = children[i];
                     if (child is null) continue;
 
-                    if (child.Id == 0) child.Id = generateUniqueId();
                     validateChildRelationship(child, parent.Id);
 
                     bool alreadyChild = false;
@@ -285,19 +283,8 @@ public sealed class PicoStore
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private uint generateUniqueId()
-    {
-        return Interlocked.Increment(ref _nextId);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ensureEntityIndexed(Entity entity)
     {
-        if (entity.Id == 0)
-        {
-            entity.Id = generateUniqueId();
-        }
-
         var id = entity.Id;
         // TryAdd returns true if the key was not found and was added.
         // This avoids the O(N) list.Contains check, since an entity not in _idIndex 
@@ -386,7 +373,7 @@ public sealed class PicoStore
 
             while (queue.TryDequeue(out var entity))
             {
-                if (entity.Id == 0 || !toRemove.Add(entity.Id)) continue;
+                if (!toRemove.Add(entity.Id)) continue;
 
                 foreach (var childId in entity.ChildIds)
                 {

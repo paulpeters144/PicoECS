@@ -37,10 +37,28 @@ var pos = new Position { X = 10, Y = 20 };
 store.Add(player, pos);
 ```
 
-### Entity Hierarchy
+### Creating a Hierarchy
 
 PicoECS manages nested entity relationships. For example, a Player can own an Inventory that contains various Items:
 
+```csharp
+// create the store
+var store = new PicoStore();
+
+// initialize your entities
+var player = new Player();
+var inventory = new Inventory();
+var position = new Position();
+var sword = new Sword();
+var shield = new Shield();
+
+// add player to the store with inventory and position as a children
+store.Add(player, inventory, position);
+
+// add sword to the store with inventory as the parent
+store.Add(inventory, sword, shield);
+```
+#### Created Hierarchy
 ```mermaid
 graph TD
     Player[Player]
@@ -54,9 +72,8 @@ graph TD
     Inventory --> Sword
     Inventory --> Shield
 ```
-
+#### Querying the Hierarchy
 ```csharp
-// Find things in hierarchies
 var player = store.GetFirst<Player>();
 var inventory = store.GetChild<Inventory>(player).First();
 var sword = store.GetChild<Sword>(inventory).First();
