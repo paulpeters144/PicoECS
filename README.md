@@ -1,25 +1,24 @@
 # PicoECS
 
-PicoECS is a lightweight, thread-safe, hierarchy-first Entity Component System (ECS) for .NET. It is designed for scenarios where entities are naturally organized into parent-child relationships, such as scene graphs, nested inventory systems, or UI trees.
+PicoECS is a fast, thread-safe, and simple way to store and find entities in your .NET applications. It is designed to handle hierarchical data—where objects are naturally nested, like items in an inventory, UI elements in a tree, or objects in a game scene.
 
-## Features
+## Why PicoECS?
 
-- **Hierarchy-First:** Native support for parent-child relationships and recursive descendant management.
-- **Thread-Safe:** Built-in concurrency support using `ReaderWriterLockSlim`.
-- **Fast Lookups:** O(1) entity retrieval by ID and high-performance type-based queries.
-- **Ergonomic API:** Clean generic overloads for querying multiple types simultaneously.
-- **Polymorphic Queries:** Relationship-based queries (children, parents) support polymorphism.
+- **Hierarchy-First:** Easily link entities as parents and children. Removing a parent automatically cleans up all its descendants.
+- **Thread-Safe:** Built-in support for multiple threads reading and writing at the same time using `ReaderWriterLockSlim`.
+- **Fast:** Find entities by their unique ID in O(1) time or query all entities of a specific type instantly.
+- **Simple API:** No complex setup. Just inherit from `Entity` and start using the `PicoStore`.
 
 ## Getting Started
 
 ### 1. Define Your Entities
 
-Entities are defined by inheriting from the `Entity` base class.
+Entities are just classes that inherit from `Entity`.
 
 ```csharp
 public class Player : Entity { public string Name { get; set; } = "Hero"; }
-public class Transform : Entity { public float X { get; set; } public float Y { get; set; } }
-public class InventoryItem : Entity { public string ItemId { get; set; } = string.Empty; }
+public class Position : Entity { public float X, Y; }
+public class Item : Entity { public string Name { get; set; } = "Sword"; }
 ```
 
 ### 2. Basic Usage
@@ -27,46 +26,77 @@ public class InventoryItem : Entity { public string ItemId { get; set; } = strin
 ```csharp
 using PicoECS;
 
-// Initialize the store
+// Create the store
 var store = new PicoStore();
 
-// Create and add entities while establishing hierarchy
+// Add entities and establish a hierarchy
 var player = new Player();
-var position = new Transform { X = 10, Y = 20 };
-store.Add(player, position); // 'position' becomes a child of 'player'
+var pos = new Position { X = 10, Y = 20 };
 
-// Query entities using ergonomic generics (supports up to 5 types)
-var heroes = store.GetAll<Player>();
-var combo = store.GetAll<Player, Transform, InventoryItem>();
+// 'pos' becomes a child of 'player'
+store.Add(player, pos);
+```
 
-// Retrieve specific entities
-var firstPlayer = store.GetFirst<Player>();
-var specificPlayer = store.Get<Player>(player.Id);
+### Entity Hierarchy
 
-// Lifecycle management
-// Removing a parent automatically removes all descendants (recursively)
+PicoECS manages nested entity relationships. For example, a Player can own an Inventory that contains various Items:
+
+```mermaid
+graph TD
+    Player[Player]
+    Position[Position]
+    Inventory[Inventory]
+    Sword[Sword]
+    Shield[Shield]
+
+    Player --> Position
+    Player --> Inventory
+    Inventory --> Sword
+    Inventory --> Shield
+```
+
+```csharp
+// Find things in hierarchies
+var player = store.GetFirst<Player>();
+var inventory = store.GetChild<Inventory>(player).First();
+var sword = store.GetChild<Sword>(inventory).First();
+
+// Removing an entity recursively removes all of the entity's descendants
 store.Remove(player); 
 ```
 
-## Advanced Querying
+### 3. Using ForEach
 
-### Multiple Type Overloads
-PicoECS provides high-performance generic overloads for querying multiple types at once:
+You can quickly run code on every entity of a certain type without creating a new list.
+
 ```csharp
-var results = store.GetAll<Type1, Type2, Type3, Type4, Type5>();
+// Run an action on every Position entity
+store.ForEach<Position>(p => {
+    p.X += 1.0f;
+    Console.WriteLine($"Moved to {p.X}, {p.Y}");
+});
+
+// Or run it on every single entity in the store
+store.ForEach(e => Console.WriteLine($"Entity ID: {e.Id}"));
 ```
 
-### Hierarchy & Relationships
+## Querying
+
+### Multiple Types
+If you need entities of several different types at once, you can pass them as parameters:
 ```csharp
-var children = store.GetChildren<Transform>(player);
-var parent = store.GetParent<Player>(position);
+var results = store.GetAll(typeof(Player), typeof(Item));
+```
+
+### Descendants
+Get every entity nested under a parent:
+```csharp
 var allDescendants = store.GetDescendants(player);
 ```
 
 ## More Examples
 
-For a comprehensive look at the API, including concurrent usage and polymorphic vs. exact type matching, please refer to the functional test suite:
-
+For a full look at the API, check out the test suite:
 👉 **[PicoECS.Tests/StoreApiTests.cs](./PicoECS.Tests/StoreApiTests.cs)**
 
 ## License
