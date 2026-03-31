@@ -9,7 +9,7 @@ public class OtherBenchmarkEntity : Entity { }
 [MemoryDiagnoser]
 public class StoreBenchmarks
 {
-    private EcStore _store = null!;
+    private PicoStore _store = null!;
     private uint[] _ids = null!;
     private BenchmarkEntity _root = null!;
     private List<Entity> _toRemove = null!;
@@ -20,7 +20,7 @@ public class StoreBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _store = new EcStore();
+        _store = new PicoStore();
         _ids = new uint[EntityCount];
         
         for (int i = 0; i < EntityCount; i++)
@@ -56,7 +56,7 @@ public class StoreBenchmarks
     [Benchmark]
     public void AddEntities()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         for (int i = 0; i < EntityCount; i++)
         {
             store.Add(new BenchmarkEntity());

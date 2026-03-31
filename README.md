@@ -28,7 +28,7 @@ public class InventoryItem : Entity { public string ItemId { get; set; } = strin
 using PicoECS;
 
 // Initialize the store
-var store = new EcStore();
+var store = new PicoStore();
 
 // Create and add entities while establishing hierarchy
 var player = new Player();

@@ -10,14 +10,14 @@ public class TestEntity : Entity { }
 public class OtherEntity : Entity { }
 public class DerivedTestEntity : TestEntity { }
 
-public class EcStoreTests
+public class PicoStoreTests
 {
     #region Add & Count Tests
 
     [Fact]
     public void Add_SingleEntity_AssignsId()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         Assert.NotEqual(0u, ent.Id);
@@ -27,7 +27,7 @@ public class EcStoreTests
     [Fact]
     public void Add_MultipleEntities_AssignsUniqueIds()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent1 = new TestEntity();
         var ent2 = new TestEntity();
         store.Add(ent1);
@@ -39,7 +39,7 @@ public class EcStoreTests
     [Fact]
     public void Add_ParentAndChildren_MaintainsHierarchy()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child1 = new TestEntity();
         var child2 = new OtherEntity();
@@ -56,14 +56,14 @@ public class EcStoreTests
     [Fact]
     public void Add_NullParent_ThrowsArgumentNullException()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Throws<ArgumentNullException>(() => store.Add(null!));
     }
 
     [Fact]
     public void Add_NullChild_IsIgnored()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         store.Add(parent, null!);
         Assert.Equal(1, store.Count);
@@ -73,7 +73,7 @@ public class EcStoreTests
     [Fact]
     public void Add_ChildAlreadyHasDifferentParent_ThrowsInvalidOperationException()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent1 = new TestEntity();
         var parent2 = new TestEntity();
         var child = new TestEntity();
@@ -85,7 +85,7 @@ public class EcStoreTests
     [Fact]
     public void Add_ChildToSameParentTwice_IsIdempotent()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new TestEntity();
 
@@ -99,7 +99,7 @@ public class EcStoreTests
     [Fact]
     public void Add_EntityTwice_DoesNotDuplicateInIndex()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         store.Add(ent);
@@ -109,7 +109,7 @@ public class EcStoreTests
     [Fact]
     public void Count_EmptyStore_ReturnsZero()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Equal(0, store.Count);
     }
 
@@ -120,7 +120,7 @@ public class EcStoreTests
     [Fact]
     public void Get_ExistingEntity_ReturnsCorrectInstance()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         var fetched = store.GetById<TestEntity>(ent.Id);
@@ -130,14 +130,14 @@ public class EcStoreTests
     [Fact]
     public void Get_NonExistentId_ReturnsNull()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Null(store.GetById<TestEntity>(999));
     }
 
     [Fact]
     public void Get_WrongType_ReturnsNull()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         Assert.Null(store.GetById<OtherEntity>(ent.Id));
@@ -146,7 +146,7 @@ public class EcStoreTests
     [Fact]
     public void GetFirst_Existing_ReturnsFirstEntity()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent1 = new TestEntity();
         var ent2 = new TestEntity();
         store.Add(ent1);
@@ -158,14 +158,14 @@ public class EcStoreTests
     [Fact]
     public void GetFirst_NonExistent_ReturnsNull()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Null(store.GetFirst<TestEntity>());
     }
 
     [Fact]
     public void GetAll_Unfiltered_ReturnsEverything()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
         Assert.Equal(2, store.GetAll().Count);
@@ -174,7 +174,7 @@ public class EcStoreTests
     [Fact]
     public void ForEach_ExecutesOnAllEntities()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
         int count = 0;
@@ -185,7 +185,7 @@ public class EcStoreTests
     [Fact]
     public void ForEach_Generic_ExecutesOnMatchingType()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new TestEntity());
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
@@ -201,7 +201,7 @@ public class EcStoreTests
     [Fact]
     public void GetParent_RootEntity_ReturnsNull()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         Assert.Null(store.GetParent<Entity>(ent));
@@ -210,7 +210,7 @@ public class EcStoreTests
     [Fact]
     public void GetParent_ChildEntity_ReturnsParent()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new TestEntity();
         store.Add(parent, child);
@@ -220,7 +220,7 @@ public class EcStoreTests
     [Fact]
     public void GetParent_WrongType_ReturnsNull()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new TestEntity();
         store.Add(parent, child);
@@ -230,14 +230,14 @@ public class EcStoreTests
     [Fact]
     public void GetParent_NullEntity_ThrowsArgumentNullException()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Throws<ArgumentNullException>(() => store.GetParent<Entity>(null!));
     }
 
     [Fact]
     public void GetChildren_LeafEntity_ReturnsEmpty()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         Assert.Empty(store.GetChildren<Entity>(ent));
@@ -246,7 +246,7 @@ public class EcStoreTests
     [Fact]
     public void GetChildren_Polymorphic_ReturnsDerivedTypes()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new DerivedTestEntity();
         store.Add(parent, child);
@@ -258,14 +258,14 @@ public class EcStoreTests
     [Fact]
     public void GetChildren_NullParent_ThrowsArgumentNullException()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Throws<ArgumentNullException>(() => store.GetChildren<Entity>(null!));
     }
 
     [Fact]
     public void GetChildCount_ReturnsCorrectValue()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         store.Add(parent, new TestEntity(), new TestEntity());
         Assert.Equal(2, store.GetChildCount(parent));
@@ -274,14 +274,14 @@ public class EcStoreTests
     [Fact]
     public void GetChildCount_NullParent_ThrowsArgumentNullException()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Throws<ArgumentNullException>(() => store.GetChildCount(null!));
     }
 
     [Fact]
     public void GetDescendants_DeepHierarchy_ReturnsAllRecursively()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var root = new TestEntity();
         var c1 = new TestEntity();
         var c2 = new TestEntity();
@@ -299,7 +299,7 @@ public class EcStoreTests
     [Fact]
     public void GetDescendants_NullParent_ThrowsArgumentNullException()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Throws<ArgumentNullException>(() => store.GetDescendants(null!));
     }
 
@@ -310,7 +310,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_SingleRoot_RemovesFromStore()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         store.Remove(ent);
@@ -321,7 +321,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_WithChildren_RemovesRecursively()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new TestEntity();
         store.Add(parent, child);
@@ -333,7 +333,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_NonExistentEntity_DoesNothing()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity(); // Not added to store
         store.Remove(ent);
         Assert.Equal(0, store.Count);
@@ -342,7 +342,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_NullEntity_IsIgnored()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Remove(null!);
         Assert.Equal(0, store.Count);
     }
@@ -350,7 +350,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_ChildDirectly_LeavesDanglingIdInParent_KnownBehavior()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new TestEntity();
         store.Add(parent, child);
@@ -366,7 +366,7 @@ public class EcStoreTests
     [Fact]
     public void Clear_RemovesAllEntitiesAndResetsCount()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new TestEntity());
         store.Add(new OtherEntity());
         store.Clear();
@@ -381,7 +381,7 @@ public class EcStoreTests
     [Fact]
     public void Concurrent_Add_IsThreadSafe()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         int count = 1000;
         Parallel.For(0, count, i => store.Add(new TestEntity()));
         Assert.Equal(count, store.Count);
@@ -390,7 +390,7 @@ public class EcStoreTests
     [Fact]
     public void Concurrent_Remove_IsThreadSafe()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var entities = Enumerable.Range(0, 500).Select(_ => new TestEntity()).ToArray();
         foreach (var e in entities) store.Add(e);
 
@@ -401,7 +401,7 @@ public class EcStoreTests
     [Fact]
     public async Task Concurrent_ReadWrite_IsThreadSafe()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var task1 = Task.Run(() => 
         {
             for(int i=0; i<500; i++) store.Add(new TestEntity());
@@ -422,7 +422,7 @@ public class EcStoreTests
     [Fact]
     public void Hierarchy_DeeplyNested_RemovalWorks()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Entity current = new TestEntity();
         store.Add(current);
         var root = current;
@@ -442,7 +442,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_MiddleNode_RemovesSubtreeOnly()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var root = new TestEntity();
         var middle = new TestEntity();
         var leaf = new TestEntity();
@@ -461,7 +461,7 @@ public class EcStoreTests
     [Fact]
     public void Add_BatchChildren()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var children = Enumerable.Range(0, 10).Select(_ => new TestEntity()).ToArray();
         
@@ -474,7 +474,7 @@ public class EcStoreTests
     [Fact]
     public void ForEach_Generic_ExecutesZeroTimesWhenNoneMatch()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new OtherEntity());
         int count = 0;
         store.ForEach<TestEntity>(e => count++);
@@ -484,7 +484,7 @@ public class EcStoreTests
     [Fact]
     public void Remove_MultipleTimes_Idempotent()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var ent = new TestEntity();
         store.Add(ent);
         store.Remove(ent);
@@ -495,7 +495,7 @@ public class EcStoreTests
     [Fact]
     public void Add_ExistingEntityAsChild_ToSameParent_DoesNotChangeCount()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent = new TestEntity();
         var child = new TestEntity();
         store.Add(parent, child);
@@ -510,7 +510,7 @@ public class EcStoreTests
     [Fact]
     public void Get_NullId_ReturnsNull()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         Assert.Null(store.GetById<Entity>(0));
     }
 

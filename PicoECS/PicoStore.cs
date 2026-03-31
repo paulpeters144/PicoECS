@@ -12,7 +12,7 @@ namespace PicoECS;
 /// <summary>
 /// A fast, thread-safe store for entities and their relationships.
 /// </summary>
-public sealed class EcStore
+public sealed class PicoStore
 {
     private readonly Dictionary<Type, List<Entity>> _typeLists = [];
     private readonly Dictionary<uint, Entity> _idIndex = [];

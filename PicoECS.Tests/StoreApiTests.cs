@@ -34,7 +34,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Initialize_And_Add_Entities()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var player = new Player { Name = "Hero" };
         store.Add(player);
 
@@ -45,7 +45,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Establish_And_Retrieve_Parent_Child_Hierarchies()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var player = new Player { Name = "Hero" };
         var transform = new Transform { X = 10, Y = 20 };
         var sword = new InventoryItem { ItemId = "sword_01" };
@@ -63,7 +63,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Query_Entities_By_Id_Type_And_First_Match()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var player1 = new Player { Name = "Player 1" };
         var player2 = new Player { Name = "Player 2" };
         store.Add(player1);
@@ -89,7 +89,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Remove_Entities_Recursively_By_Hierarchy()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var player = new Player();
         var transform = new Transform();
         var item = new InventoryItem();
@@ -110,7 +110,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Query_Direct_Parent_And_Child_Relationships_Polymorphically()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var player = new Player { Name = "Hero" };
         var sword = new Weapon { ItemId = "sword_01", Damage = 50 };
         var shield = new InventoryItem { ItemId = "shield_01" };
@@ -129,7 +129,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Retrieve_All_Entities_Unfiltered()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new Player());
         store.Add(new Transform());
         store.Add(new InventoryItem());
@@ -143,7 +143,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Retrieve_Entities_By_Type_Runtime()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new Player { Name = "Hero" });
         store.Add(new Transform { X = 10 });
 
@@ -156,7 +156,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Is_ThreadSafe_During_Concurrent_Adds_And_Queries()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         
         Parallel.For(0, 100, i => 
         {
@@ -174,7 +174,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Clear_All_Indexed_Entities()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         store.Add(new Player());
         store.Add(new Transform());
 
@@ -190,7 +190,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Retrieve_All_Descendants_Recursively()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var grandparent = new Player { Name = "Grandparent" };
         var parent = new Transform { X = 1, Y = 1 };
         var child = new InventoryItem { ItemId = "Heirloom" };
@@ -211,7 +211,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Differentiates_Between_Exact_Type_Queries_And_Polymorphic_Relationships()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var weapon = new Weapon { Damage = 50 };
         var basicItem = new InventoryItem { ItemId = "Apple" };
 
@@ -240,7 +240,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Throws_When_Adding_Child_To_A_Second_Parent()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var parent1 = new Player { Name = "Parent 1" };
         var parent2 = new Player { Name = "Parent 2" };
         var child = new Transform { X = 0, Y = 0 };
@@ -255,7 +255,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Can_Batch_Remove_Multiple_Root_Entities()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         var player1 = new Player();
         var player2 = new Player();
         var player3 = new Player();
@@ -277,7 +277,7 @@ public class StoreApiTests
     [Fact]
     public void Store_Example_Query_Children_And_Identify_Types()
     {
-        var store = new EcStore();
+        var store = new PicoStore();
         
         // 1. Setup: Create a player and give them a Transform and a Weapon as children
         var player = new Player { Name = "Hero" };
