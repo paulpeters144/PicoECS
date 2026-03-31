@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using PicoECS;
-using System.Collections.Generic;
 
 namespace PicoECS.Benchmarks;
 

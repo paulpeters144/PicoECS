@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System;
-
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("PicoECS.Tests")]
@@ -73,40 +68,6 @@ public sealed class PicoStore
                 return result;
             }
             return [];
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
-    }
-
-    internal void ForEachInternal(Type[] types, Action<PicoEntity> action)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        if (types == null || types.Length == 0) return;
-
-        _lock.EnterReadLock();
-        try
-        {
-            // Use HashSet for distinct types if multiple provided, otherwise direct lookup
-            if (types.Length == 1)
-            {
-                if (types[0] != null && _typeLists.TryGetValue(types[0], out var list))
-                {
-                    foreach (var entity in list) action(entity);
-                }
-            }
-            else
-            {
-                var processed = new HashSet<Type>();
-                foreach (var type in types)
-                {
-                    if (type != null && processed.Add(type) && _typeLists.TryGetValue(type, out var list))
-                    {
-                        foreach (var entity in list) action(entity);
-                    }
-                }
-            }
         }
         finally
         {
