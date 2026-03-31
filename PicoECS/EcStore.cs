@@ -3,6 +3,10 @@ using System.Linq;
 using System.Threading;
 using System;
 
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("PicoECS.Tests")]
+
 namespace PicoECS;
 
 /// <summary>
@@ -42,7 +46,7 @@ public sealed class EcStore
     /// </summary>
     public List<Entity> GetAll(params Type[] types)
     {
-        if (types.Length == 0) return GetAll();
+        if (types == null || types.Length == 0) return GetAll();
 
         _lock.EnterReadLock();
         try
@@ -83,7 +87,7 @@ public sealed class EcStore
     /// </summary>
     public List<Entity> GetAll(params Entity[] filterTargets)
     {
-        if (filterTargets.Length == 0) return GetAll();
+        if (filterTargets == null || filterTargets.Length == 0) return GetAll();
         var types = new Type[filterTargets.Length];
         for (int i = 0; i < filterTargets.Length; i++)
         {
@@ -137,7 +141,7 @@ public sealed class EcStore
         {
             ensureEntityIndexed(parent);
 
-            if (children.Length > 0)
+            if (children != null && children.Length > 0)
             {
                 bool childrenChanged = false;
                 int originalCount = parent.ChildIds.Length;
@@ -304,7 +308,7 @@ public sealed class EcStore
     /// </summary>
     public void Remove(params Entity[] entities)
     {
-        if (entities.Length == 0) return;
+        if (entities == null || entities.Length == 0) return;
 
         _lock.EnterWriteLock();
         try
