@@ -1,8 +1,8 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("PicoEntityStore.Tests")]
+[assembly: InternalsVisibleTo("PicoEntityStoreCore.Tests")]
 
-namespace PicoEntityStore;
+namespace PicoEntityStoreCore;
 
 /// <summary>
 /// A fast, thread-safe store for entities and their relationships.

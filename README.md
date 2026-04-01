@@ -52,7 +52,7 @@ public class Sword : PicoEntity { }
 The `PicoEntityStore` is the central hub for all your entities.
 
 ```csharp
-using PicoEntityStore;
+using PicoEntityStoreCore;
 
 var store = new PicoEntityStore();
 ```

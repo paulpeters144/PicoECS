@@ -1,4 +1,4 @@
-namespace PicoEntityStore;
+namespace PicoEntityStoreCore;
 
 /// <summary>
 /// Mandatory base class for all entities in the PicoEntityStore store.

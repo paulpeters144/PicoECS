@@ -1,4 +1,6 @@
-namespace PicoEntityStore.Tests;
+namespace PicoEntityStoreCore.Tests;
+
+using PicoEntityStoreCore;
 
 public class StoreApiTests
 {

@@ -9,6 +9,8 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <RootNamespace>PicoEntityStoreCore.Benchmarks</RootNamespace>
+    <AssemblyName>PicoEntityStoreCore.Benchmarks</AssemblyName>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

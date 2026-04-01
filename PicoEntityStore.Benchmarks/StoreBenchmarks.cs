@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
-using PicoEntityStore;
+using PicoEntityStoreCore;
 
-namespace PicoEntityStore.Benchmarks;
+namespace PicoEntityStoreCore.Benchmarks;
 
 public class BenchmarkPicoEntity : PicoEntity { }
 public class OtherBenchmarkPicoEntity : PicoEntity { }

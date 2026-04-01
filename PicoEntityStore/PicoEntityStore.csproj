@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <RootNamespace>PicoEntityStoreCore</RootNamespace>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -8,7 +9,7 @@
     <Title>PicoEntityStore</Title>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>PicoEntityStore</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.3</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>Paul Q. Peters</Authors>
     <Product>PicoEntityStore</Product>
