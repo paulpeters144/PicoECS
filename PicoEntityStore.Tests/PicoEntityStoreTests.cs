@@ -338,6 +338,27 @@ public class PicoEntityStoreTests
         Assert.Empty(store.All());
     }
 
+    [Fact]
+    public void Clear_Then_Add_Entity_Again_Can_Query_By_Id()
+    {
+        var store = new PicoEntityStore();
+        var entity = new TestPicoEntity();
+        uint id = entity.Id;
+
+        store.Add(entity);
+        Assert.Equal(1, store.Count);
+
+        store.Clear();
+        Assert.Equal(0, store.Count);
+        Assert.Null(store.Get<TestPicoEntity>(id));
+
+        store.Add(entity);
+        Assert.Equal(1, store.Count);
+        var retrieved = store.Get<TestPicoEntity>(id);
+        Assert.NotNull(retrieved);
+        Assert.Equal(entity, retrieved);
+    }
+
     #endregion
 
     #region Concurrency Tests
