@@ -9,7 +9,7 @@
     <Title>PicoEntityStore</Title>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>PicoEntityStore</PackageId>
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>Paul Q. Peters</Authors>
     <Product>PicoEntityStore</Product>
